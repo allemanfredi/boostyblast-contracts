@@ -1,19 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import { MessageDataCodec, MessageData, MessageType, ReactionType, CastId } from "farcaster-solidity/contracts/protobufs/message.proto.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { MessageDataCodec, MessageData, MessageType, ReactionType } from "farcaster-solidity/contracts/protobufs/message.proto.sol";
 import { Blake3 } from "farcaster-solidity/contracts/libraries/Blake3.sol";
 import { Ed25519 } from "farcaster-solidity/contracts/libraries/Ed25519.sol";
 import { IPromoty } from "./interfaces/IPromoty.sol";
 import { IIdRegistry } from "./interfaces/IIdRegistry.sol";
 
-contract Promoty is IPromoty {
-    address public immutable ID_REGISTRY;
+contract Promoty is IPromoty, Ownable {
+    uint256 public constant FEE = 10; // 0.1%
+    uint256 public constant PERCENTAGE_DIVISOR = 10000;
+
+    address public idRegistry;
+    address public feesCollector;
 
     mapping(bytes => mapping(uint256 => Reward)) private _rewards;
 
-    constructor(address idRegistry) {
-        ID_REGISTRY = idRegistry;
+    constructor(address idRegistry_, address feesCollector_) Ownable(msg.sender) {
+        idRegistry = idRegistry_;
+        feesCollector = feesCollector_;
     }
 
     /// @inheritdoc IPromoty
@@ -30,7 +36,7 @@ contract Promoty is IPromoty {
         uint256 creatorFid = reward.creatorFid;
         if (creatorFid == 0) revert NoReward();
         uint256 rewardAmount = reward.amount;
-        address rewardCreator = IIdRegistry(ID_REGISTRY).custodyOf(reward.creatorFid);
+        address rewardCreator = IIdRegistry(idRegistry).custodyOf(reward.creatorFid);
         if (rewardCreator == address(0)) revert InvalidFid();
         if (block.timestamp <= reward.expiresAt) revert RewardNotExpired();
         delete _rewards[messageHash][recasterFid];
@@ -55,12 +61,17 @@ contract Promoty is IPromoty {
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recastedMessageFid];
 
-        // TODO: send percentage to Promoty
-        address recaster = IIdRegistry(ID_REGISTRY).custodyOf(recastedMessageFid);
+        uint256 treasuryRewardAmount = (rewardAmount * FEE) / PERCENTAGE_DIVISOR;
+        uint256 recasterRewardAmount = rewardAmount - treasuryRewardAmount;
+
+        address recaster = IIdRegistry(idRegistry).custodyOf(recastedMessageFid);
         if (recaster == address(0)) revert InvalidFid();
-        (bool sent, ) = recaster.call{ value: rewardAmount }("");
+
+        (bool sent, ) = recaster.call{ value: recasterRewardAmount }("");
         if (!sent) revert FailedToSendReward();
-        emit RewardClaimed(messageHash, recastedMessageFid, rewardAmount);
+        (sent, ) = feesCollector.call{ value: treasuryRewardAmount }("");
+        if (!sent) revert FailedToSendFeeToTreasury();
+        emit RewardClaimed(messageHash, recastedMessageFid, recasterRewardAmount);
     }
 
     /// @inheritdoc IPromoty
@@ -82,6 +93,18 @@ contract Promoty is IPromoty {
             messageData.fid
         );
         emit RecastRewarded(messageHash, recasterFid, msg.value);
+    }
+
+    /// @inheritdoc IPromoty
+    function setFeesCollector(address feesCollector_) external onlyOwner {
+        feesCollector = feesCollector_;
+        emit FeesCollectorSet(feesCollector_);
+    }
+
+    /// @inheritdoc IPromoty
+    function setIdRegistry(address idRegistry_) external onlyOwner {
+        idRegistry = idRegistry_;
+        emit IdRegistrySet(idRegistry_);
     }
 
     function _verifyMessage(

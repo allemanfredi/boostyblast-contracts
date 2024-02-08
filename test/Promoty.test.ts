@@ -15,7 +15,12 @@ const ed25519Influencer = Factories.Ed25519Signer.build()
 
 describe("Promoty", () => {
   let messageDataToRecast: MessageData
-  let promoty: any, idRegistry: any, relayer: any, influencer: SignerWithAddress, owner: SignerWithAddress
+  let promoty: any,
+    idRegistry: any,
+    relayer: any,
+    influencer: SignerWithAddress,
+    owner: SignerWithAddress,
+    feesCollector: SignerWithAddress
 
   beforeEach(async () => {
     const Blake3 = await ethers.getContractFactory("Blake3")
@@ -44,9 +49,10 @@ describe("Promoty", () => {
     owner = signers[0]
     influencer = signers[1]
     relayer = signers[2]
+    feesCollector = signers[3]
 
     idRegistry = await MockIdRegistry.deploy()
-    promoty = await Promoty.deploy(await idRegistry.getAddress())
+    promoty = await Promoty.deploy(await idRegistry.getAddress(), feesCollector.address)
 
     await idRegistry.setAddressForFid(INFLUENCER_FID, influencer.address)
     await idRegistry.setAddressForFid(USER_FID, owner.address)
@@ -72,6 +78,8 @@ describe("Promoty", () => {
 
   it("should be able to get a reward on a recast", async () => {
     const reward = ethers.parseEther("1")
+    const recasterReward = ethers.parseEther("0.999")
+    const fee = ethers.parseEther("0.001")
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
@@ -104,12 +112,15 @@ describe("Promoty", () => {
     message = MessageData.encode(messageDataToClaimReward).finish()
     const messageDataToClaimRewardHash = await hashMessage(message)
 
-    const balanceBefore = await ethers.provider.getBalance(influencer.address)
+    const balanceBeforeRecaster = await ethers.provider.getBalance(influencer.address)
+    const balanceBeforeFeesCollector = await ethers.provider.getBalance(feesCollector.address)
     await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
       .to.emit(promoty, "RewardClaimed")
-      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, reward)
-    const balanceAfter = await ethers.provider.getBalance(influencer.address)
-    expect(balanceAfter).to.be.eq(balanceBefore + reward)
+      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward)
+    const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
+    const balanceAfterFeesCollector = await ethers.provider.getBalance(feesCollector.address)
+    expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
+    expect(balanceAfterFeesCollector).to.be.eq(balanceBeforeFeesCollector + fee)
   })
 
   it("should not be able to get a reward on a recast because the specified fid is not registered", async () => {

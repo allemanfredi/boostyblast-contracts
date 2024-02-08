@@ -9,10 +9,13 @@ interface IPromoty {
     }
 
     event ExpiredRewardClaimed(bytes messageHash, uint256 creatorFid, uint256 reward);
+    event FeesCollectorSet(address feesCollector);
+    event IdRegistrySet(address idRegistry);
     event RewardClaimed(bytes messageHash, uint256 recasterFid, uint256 reward);
     event RecastRewarded(bytes messageHash, uint256 recasterFid, uint256 reward);
 
     error FailedToSendExpiredReward();
+    error FailedToSendFeeToTreasury();
     error FailedToSendReward();
     error InvalidSignature();
     error InvalidEncoding();
@@ -42,4 +45,8 @@ interface IPromoty {
         uint256 recasterFid,
         uint64 duration
     ) external payable;
+
+    function setFeesCollector(address feesCollector_) external;
+
+    function setIdRegistry(address idRegistry_) external;
 }
