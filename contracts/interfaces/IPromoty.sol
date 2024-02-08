@@ -16,6 +16,7 @@ interface IPromoty {
     error FailedToSendReward();
     error InvalidSignature();
     error InvalidEncoding();
+    error InvalidFid();
     error InvalidMessageType();
     error InvalidValue();
     error InvalidReactionType();

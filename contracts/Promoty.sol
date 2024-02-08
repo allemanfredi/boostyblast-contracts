@@ -27,14 +27,17 @@ contract Promoty is IPromoty {
         (, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
 
         Reward storage reward = _rewards[messageHash][recasterFid];
+        uint256 creatorFid = reward.creatorFid;
+        if (creatorFid == 0) revert NoReward();
         uint256 rewardAmount = reward.amount;
         address rewardCreator = IIdRegistry(ID_REGISTRY).custodyOf(reward.creatorFid);
+        if (rewardCreator == address(0)) revert InvalidFid();
         if (block.timestamp <= reward.expiresAt) revert RewardNotExpired();
         delete _rewards[messageHash][recasterFid];
 
         (bool sent, ) = rewardCreator.call{ value: rewardAmount }("");
         if (!sent) revert FailedToSendExpiredReward();
-        emit ExpiredRewardClaimed(messageHash, reward.creatorFid, rewardAmount);
+        emit ExpiredRewardClaimed(messageHash, creatorFid, rewardAmount);
     }
 
     /// @inheritdoc IPromoty
@@ -48,11 +51,13 @@ contract Promoty is IPromoty {
         Reward storage reward = _rewards[recastedMessageHash][recastedMessageFid];
         uint256 rewardAmount = reward.amount;
         if (rewardAmount == 0) revert NoReward();
+        // NOTE: using message.timestamp could allow an "attacker" to sign the message and don't broadcasting for a long time
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recastedMessageFid];
 
         // TODO: send percentage to Promoty
         address recaster = IIdRegistry(ID_REGISTRY).custodyOf(recastedMessageFid);
+        if (recaster == address(0)) revert InvalidFid();
         (bool sent, ) = recaster.call{ value: rewardAmount }("");
         if (!sent) revert FailedToSendReward();
         emit RewardClaimed(messageHash, recastedMessageFid, rewardAmount);
@@ -70,7 +75,6 @@ contract Promoty is IPromoty {
         if (msg.value == 0) revert InvalidValue();
         (MessageData memory messageData, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
         if (messageData.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidMessageType();
-
         uint256 currentRewardValue = _rewards[messageHash][recasterFid].amount;
         _rewards[messageHash][recasterFid] = Reward(
             currentRewardValue + msg.value,
