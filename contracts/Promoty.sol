@@ -13,13 +13,11 @@ contract Promoty is IPromoty, Ownable {
     uint256 public constant PERCENTAGE_DIVISOR = 10000;
 
     address public idRegistry;
-    address public feesCollector;
 
     mapping(bytes => mapping(uint256 => Reward)) private _rewards;
 
-    constructor(address idRegistry_, address feesCollector_) Ownable(msg.sender) {
+    constructor(address idRegistry_) Ownable(msg.sender) {
         idRegistry = idRegistry_;
-        feesCollector = feesCollector_;
     }
 
     /// @inheritdoc IPromoty
@@ -61,16 +59,14 @@ contract Promoty is IPromoty, Ownable {
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recastedMessageFid];
 
-        uint256 treasuryRewardAmount = (rewardAmount * FEE) / PERCENTAGE_DIVISOR;
-        uint256 recasterRewardAmount = rewardAmount - treasuryRewardAmount;
+        uint256 fee = (rewardAmount * FEE) / PERCENTAGE_DIVISOR;
+        uint256 recasterRewardAmount = rewardAmount - fee;
 
         address recaster = IIdRegistry(idRegistry).custodyOf(recastedMessageFid);
         if (recaster == address(0)) revert InvalidFid();
 
         (bool sent, ) = recaster.call{ value: recasterRewardAmount }("");
         if (!sent) revert FailedToSendReward();
-        (sent, ) = feesCollector.call{ value: treasuryRewardAmount }("");
-        if (!sent) revert FailedToSendFeeToTreasury();
         emit RewardClaimed(messageHash, recastedMessageFid, recasterRewardAmount);
     }
 
@@ -96,15 +92,17 @@ contract Promoty is IPromoty, Ownable {
     }
 
     /// @inheritdoc IPromoty
-    function setFeesCollector(address feesCollector_) external onlyOwner {
-        feesCollector = feesCollector_;
-        emit FeesCollectorSet(feesCollector_);
-    }
-
-    /// @inheritdoc IPromoty
     function setIdRegistry(address idRegistry_) external onlyOwner {
         idRegistry = idRegistry_;
         emit IdRegistrySet(idRegistry_);
+    }
+
+    /// @inheritdoc IPromoty
+    function withdrawAll(address receiver) external onlyOwner {
+        uint256 amount = address(this).balance;
+        if (amount == 0) revert NothingToWithdraw();
+        (bool sent, ) = receiver.call{ value: amount }("");
+        if (!sent) revert FailedToWithdraw();
     }
 
     function _verifyMessage(

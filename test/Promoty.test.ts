@@ -20,7 +20,7 @@ describe("Promoty", () => {
     relayer: any,
     influencer: SignerWithAddress,
     owner: SignerWithAddress,
-    feesCollector: SignerWithAddress
+    receiver: SignerWithAddress
 
   beforeEach(async () => {
     const Blake3 = await ethers.getContractFactory("Blake3")
@@ -49,10 +49,10 @@ describe("Promoty", () => {
     owner = signers[0]
     influencer = signers[1]
     relayer = signers[2]
-    feesCollector = signers[3]
+    receiver = signers[3]
 
     idRegistry = await MockIdRegistry.deploy()
-    promoty = await Promoty.deploy(await idRegistry.getAddress(), feesCollector.address)
+    promoty = await Promoty.deploy(await idRegistry.getAddress())
 
     await idRegistry.setAddressForFid(INFLUENCER_FID, influencer.address)
     await idRegistry.setAddressForFid(USER_FID, owner.address)
@@ -113,14 +113,15 @@ describe("Promoty", () => {
     const messageDataToClaimRewardHash = await hashMessage(message)
 
     const balanceBeforeRecaster = await ethers.provider.getBalance(influencer.address)
-    const balanceBeforeFeesCollector = await ethers.provider.getBalance(feesCollector.address)
+    const balanceBeforeReceiver = await ethers.provider.getBalance(receiver.address)
     await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
       .to.emit(promoty, "RewardClaimed")
       .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward)
     const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
-    const balanceAfterFeesCollector = await ethers.provider.getBalance(feesCollector.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
-    expect(balanceAfterFeesCollector).to.be.eq(balanceBeforeFeesCollector + fee)
+    await promoty.withdrawAll(receiver.address)
+    const balanceAfterReceiver = await ethers.provider.getBalance(receiver.address)
+    expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })
 
   it("should not be able to get a reward on a recast because the specified fid is not registered", async () => {

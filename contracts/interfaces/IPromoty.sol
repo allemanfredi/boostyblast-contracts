@@ -15,8 +15,8 @@ interface IPromoty {
     event RecastRewarded(bytes messageHash, uint256 recasterFid, uint256 reward);
 
     error FailedToSendExpiredReward();
-    error FailedToSendFeeToTreasury();
     error FailedToSendReward();
+    error FailedToWithdraw();
     error InvalidSignature();
     error InvalidEncoding();
     error InvalidFid();
@@ -24,6 +24,7 @@ interface IPromoty {
     error InvalidValue();
     error InvalidReactionType();
     error NoReward();
+    error NothingToWithdraw();
     error RewardExpired();
     error RewardNotExpired();
 
@@ -46,7 +47,7 @@ interface IPromoty {
         uint64 duration
     ) external payable;
 
-    function setFeesCollector(address feesCollector_) external;
-
     function setIdRegistry(address idRegistry_) external;
+
+    function withdrawAll(address receiver) external;
 }
