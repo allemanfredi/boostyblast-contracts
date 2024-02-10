@@ -124,6 +124,49 @@ describe("Promoty", () => {
     expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })
 
+  it("should be able to get a reward on a recast rewarded 2 times", async () => {
+    const reward = ethers.parseEther("1")
+    const recasterReward = ethers.parseEther("0.999")
+    const fee = ethers.parseEther("0.001")
+    let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
+    let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
+    let message = MessageData.encode(messageDataToRecast).finish()
+    const messageDataToRecastHash = await hashMessage(message)
+
+    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, 1000 * 60 * 60, {
+      value: reward,
+    })
+    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, 1000 * 60 * 60, {
+      value: reward,
+    })
+
+    const messageDataToClaimReward: MessageData = {
+      type: MessageType.REACTION_ADD,
+      fid: INFLUENCER_FID,
+      timestamp: await time.latest(),
+      network: FarcasterNetwork.MAINNET,
+      reactionBody: {
+        type: ReactionType.RECAST,
+        targetCastId: {
+          hash: messageDataToRecastHash,
+          fid: USER_FID,
+        },
+      },
+    }
+
+    signature = await signFarcasterMessage(ed25519Influencer, messageDataToClaimReward)
+    pubKey = (await ed25519Influencer.getSignerKey())._unsafeUnwrap()
+    message = MessageData.encode(messageDataToClaimReward).finish()
+    const messageDataToClaimRewardHash = await hashMessage(message)
+
+    const balanceBeforeRecaster = await ethers.provider.getBalance(influencer.address)
+    await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
+      .to.emit(promoty, "RewardClaimed")
+      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward + recasterReward)
+    const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
+    expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward + recasterReward)
+  })
+
   it("should not be able to get a reward on a recast because the specified fid is not registered", async () => {
     const reward = ethers.parseEther("1")
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
