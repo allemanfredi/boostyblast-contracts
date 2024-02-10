@@ -9,7 +9,7 @@ import { IPromoty } from "./interfaces/IPromoty.sol";
 import { IIdRegistry } from "./interfaces/IIdRegistry.sol";
 
 contract Promoty is IPromoty, Ownable {
-    uint256 public constant FEE = 10; // 0.1%
+    uint256 public constant FEE = 50; // 0.5%
     uint256 public constant PERCENTAGE_DIVISOR = 10000;
 
     address public idRegistry;

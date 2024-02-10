@@ -78,15 +78,16 @@ describe("Promoty", () => {
 
   it("should be able to get a reward on a recast", async () => {
     const reward = ethers.parseEther("1")
-    const recasterReward = ethers.parseEther("0.999")
-    const fee = ethers.parseEther("0.001")
+    const recasterReward = ethers.parseEther("0.995")
+    const fee = ethers.parseEther("0.005")
+    const duration = 1000 * 60 * 60
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
     const messageDataToRecastHash = await hashMessage(message)
 
     await expect(
-      promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, 1000 * 60 * 60, {
+      promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
         value: reward,
       }),
     )
@@ -126,17 +127,17 @@ describe("Promoty", () => {
 
   it("should be able to get a reward on a recast rewarded 2 times", async () => {
     const reward = ethers.parseEther("1")
-    const recasterReward = ethers.parseEther("0.999")
-    const fee = ethers.parseEther("0.001")
+    const recasterReward = ethers.parseEther("0.995")
+    const duration = 1000 * 60 * 60
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
     const messageDataToRecastHash = await hashMessage(message)
 
-    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, 1000 * 60 * 60, {
+    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
       value: reward,
     })
-    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, 1000 * 60 * 60, {
+    await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
       value: reward,
     })
 
