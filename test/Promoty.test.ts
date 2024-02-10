@@ -84,7 +84,7 @@ describe("Promoty", () => {
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
-    const messageDataToRecastHash = await hashMessage(message)
+    const hashMessageDataToRecast = await hashMessage(message)
 
     await expect(
       promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
@@ -92,7 +92,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + messageDataToRecastHash.toString("hex"), INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -102,9 +102,65 @@ describe("Promoty", () => {
       reactionBody: {
         type: ReactionType.RECAST,
         targetCastId: {
-          hash: messageDataToRecastHash,
+          hash: hashMessageDataToRecast,
           fid: USER_FID,
         },
+      },
+    }
+
+    signature = await signFarcasterMessage(ed25519Influencer, messageDataToClaimReward)
+    pubKey = (await ed25519Influencer.getSignerKey())._unsafeUnwrap()
+    message = MessageData.encode(messageDataToClaimReward).finish()
+    const messageDataToClaimRewardHash = await hashMessage(message)
+
+    const balanceBeforeRecaster = await ethers.provider.getBalance(influencer.address)
+    const balanceBeforeReceiver = await ethers.provider.getBalance(receiver.address)
+    await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
+      .to.emit(promoty, "RewardClaimed")
+      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward)
+    const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
+    expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
+    await promoty.withdrawAll(receiver.address)
+    const balanceAfterReceiver = await ethers.provider.getBalance(receiver.address)
+    expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
+  })
+
+  it("should be able to get a reward on a quote", async () => {
+    const reward = ethers.parseEther("1")
+    const recasterReward = ethers.parseEther("0.995")
+    const fee = ethers.parseEther("0.005")
+    const duration = 1000 * 60 * 60
+    let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
+    let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
+    let message = MessageData.encode(messageDataToRecast).finish()
+    const hashMessageDataToRecast = await hashMessage(message)
+
+    await expect(
+      promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
+        value: reward,
+      }),
+    )
+      .to.emit(promoty, "RecastRewarded")
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
+
+    const messageDataToClaimReward: MessageData = {
+      type: MessageType.CAST_ADD,
+      fid: INFLUENCER_FID,
+      timestamp: await time.latest(),
+      network: FarcasterNetwork.MAINNET,
+      castAddBody: {
+        embedsDeprecated: [],
+        mentions: [1],
+        text: "Quoting ...",
+        mentionsPositions: [1],
+        embeds: [
+          {
+            castId: {
+              fid: USER_FID,
+              hash: hashMessageDataToRecast,
+            },
+          },
+        ],
       },
     }
 
@@ -132,7 +188,7 @@ describe("Promoty", () => {
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
-    const messageDataToRecastHash = await hashMessage(message)
+    const hashMessageDataToRecast = await hashMessage(message)
 
     await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
       value: reward,
@@ -149,7 +205,7 @@ describe("Promoty", () => {
       reactionBody: {
         type: ReactionType.RECAST,
         targetCastId: {
-          hash: messageDataToRecastHash,
+          hash: hashMessageDataToRecast,
           fid: USER_FID,
         },
       },
@@ -173,7 +229,7 @@ describe("Promoty", () => {
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
-    const messageDataToRecastHash = await hashMessage(message)
+    const hashMessageDataToRecast = await hashMessage(message)
 
     await expect(
       promoty.rewardRecast(pubKey, signature.r, signature.s, message, WRONG_FID, 1000 * 60 * 60, {
@@ -181,7 +237,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + messageDataToRecastHash.toString("hex"), WRONG_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), WRONG_FID, reward)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -191,7 +247,7 @@ describe("Promoty", () => {
       reactionBody: {
         type: ReactionType.RECAST,
         targetCastId: {
-          hash: messageDataToRecastHash,
+          hash: hashMessageDataToRecast,
           fid: USER_FID,
         },
       },
@@ -217,7 +273,7 @@ describe("Promoty", () => {
     }),
       await expect(
         promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
-      ).to.be.revertedWithCustomError(promoty, "InvalidMessageType")
+      ).to.be.revertedWithCustomError(promoty, "NoReward")
   })
 
   it("should not be able to get a reward on a recast if a reward is expired", async () => {
@@ -226,7 +282,7 @@ describe("Promoty", () => {
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
-    const messageDataToRecastHash = await hashMessage(message)
+    const hashMessageDataToRecast = await hashMessage(message)
 
     await expect(
       promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
@@ -234,7 +290,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + messageDataToRecastHash.toString("hex"), INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
 
     await time.increase(duration + 1)
     const messageDataToClaimReward: MessageData = {
@@ -245,7 +301,7 @@ describe("Promoty", () => {
       reactionBody: {
         type: ReactionType.RECAST,
         targetCastId: {
-          hash: messageDataToRecastHash,
+          hash: hashMessageDataToRecast,
           fid: USER_FID,
         },
       },
@@ -265,7 +321,7 @@ describe("Promoty", () => {
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
-    const messageDataToRecastHash = await hashMessage(message)
+    const hashMessageDataToRecast = await hashMessage(message)
 
     await promoty.rewardRecast(pubKey, signature.r, signature.s, message, INFLUENCER_FID, duration, {
       value: reward,
@@ -275,7 +331,7 @@ describe("Promoty", () => {
     await time.increase(duration + 1)
     await expect(promoty.connect(relayer).claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID))
       .to.emit(promoty, "ExpiredRewardClaimed")
-      .withArgs(messageDataToRecastHash, USER_FID, reward)
+      .withArgs(hashMessageDataToRecast, USER_FID, reward)
     const balanceAfter = await ethers.provider.getBalance(owner.address)
     expect(balanceAfter).to.be.eq(balanceBefore + reward)
   })

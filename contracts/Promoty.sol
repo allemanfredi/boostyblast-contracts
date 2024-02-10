@@ -47,27 +47,39 @@ contract Promoty is IPromoty, Ownable {
     /// @inheritdoc IPromoty
     function claimReward(bytes32 publicKey, bytes32 r, bytes32 s, bytes memory message) external {
         (MessageData memory messageData, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
-        if (messageData.type_ != MessageType.MESSAGE_TYPE_REACTION_ADD) revert InvalidMessageType();
-        if (messageData.reaction_body.type_ != ReactionType.REACTION_TYPE_RECAST) revert InvalidReactionType();
 
-        bytes memory recastedMessageHash = messageData.reaction_body.target_cast_id.hash_;
-        uint256 recastedMessageFid = messageData.fid;
-        Reward storage reward = _rewards[recastedMessageHash][recastedMessageFid];
+        bytes memory recastedMessageHash;
+        uint256 recasterFid = messageData.fid;
+
+        if (
+            messageData.type_ == MessageType.MESSAGE_TYPE_REACTION_ADD &&
+            messageData.reaction_body.type_ == ReactionType.REACTION_TYPE_RECAST
+        ) {
+            recastedMessageHash = messageData.reaction_body.target_cast_id.hash_;
+        } else if (
+            messageData.type_ == MessageType.MESSAGE_TYPE_CAST_ADD && messageData.cast_add_body.embeds.length > 0
+        ) {
+            recastedMessageHash = messageData.cast_add_body.embeds[0].cast_id.hash_;
+        } else {
+            revert NoReward();
+        }
+
+        Reward storage reward = _rewards[recastedMessageHash][recasterFid];
         uint256 rewardAmount = reward.amount;
         if (rewardAmount == 0) revert NoReward();
         // NOTE: using message.timestamp could allow an "attacker" to sign the message and don't broadcasting for a long time
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
-        delete _rewards[recastedMessageHash][recastedMessageFid];
+        delete _rewards[recastedMessageHash][recasterFid];
 
         uint256 fee = (rewardAmount * FEE) / PERCENTAGE_DIVISOR;
         uint256 recasterRewardAmount = rewardAmount - fee;
 
-        address recaster = IIdRegistry(idRegistry).custodyOf(recastedMessageFid);
+        address recaster = IIdRegistry(idRegistry).custodyOf(recasterFid);
         if (recaster == address(0)) revert InvalidFid();
 
         (bool sent, ) = recaster.call{ value: recasterRewardAmount }("");
         if (!sent) revert FailedToSendReward();
-        emit RewardClaimed(messageHash, recastedMessageFid, recasterRewardAmount);
+        emit RewardClaimed(messageHash, recasterFid, recasterRewardAmount);
     }
 
     /// @inheritdoc IPromoty

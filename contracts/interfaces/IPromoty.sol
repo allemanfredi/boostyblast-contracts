@@ -22,7 +22,6 @@ interface IPromoty {
     error InvalidFid();
     error InvalidMessageType();
     error InvalidValue();
-    error InvalidReactionType();
     error NoReward();
     error NothingToWithdraw();
     error RewardExpired();
