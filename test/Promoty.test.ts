@@ -94,7 +94,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -143,7 +143,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.CAST_ADD,
@@ -257,7 +257,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), WRONG_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, WRONG_FID, reward)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -319,7 +319,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
 
     await time.increase(duration + 1)
     const messageDataToClaimReward: MessageData = {
