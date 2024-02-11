@@ -100,7 +100,7 @@ contract Promoty is IPromoty, Ownable {
             block.timestamp + duration,
             expiredReceiverFid
         );
-        emit RecastRewarded(messageHash, messageData.fid, recasterFid, msg.value);
+        emit RecastRewarded(messageHash, messageData.fid, recasterFid, msg.value, duration);
     }
 
     /// @inheritdoc IPromoty

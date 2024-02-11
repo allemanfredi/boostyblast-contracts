@@ -94,7 +94,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward, duration)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -143,7 +143,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward, duration)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.CAST_ADD,
@@ -246,18 +246,19 @@ describe("Promoty", () => {
 
   it("should not be able to get a reward on a recast because the specified fid is not registered", async () => {
     const reward = ethers.parseEther("1")
+    const duration = 1000 * 60 * 60
     let signature = await signFarcasterMessage(ed25519Signer, messageDataToRecast)
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
     await expect(
-      promoty.rewardRecast(pubKey, signature.r, signature.s, message, WRONG_FID, EXPIRED_RECEIVER_FID, 1000 * 60 * 60, {
+      promoty.rewardRecast(pubKey, signature.r, signature.s, message, WRONG_FID, EXPIRED_RECEIVER_FID, duration, {
         value: reward,
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, WRONG_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, WRONG_FID, reward, duration)
 
     const messageDataToClaimReward: MessageData = {
       type: MessageType.REACTION_ADD,
@@ -319,7 +320,7 @@ describe("Promoty", () => {
       }),
     )
       .to.emit(promoty, "RecastRewarded")
-      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, INFLUENCER_FID, reward, duration)
 
     await time.increase(duration + 1)
     const messageDataToClaimReward: MessageData = {

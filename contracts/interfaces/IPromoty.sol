@@ -15,7 +15,8 @@ interface IPromoty {
         bytes indexed messageHash,
         uint256 indexed creatorFid,
         uint256 indexed recasterFid,
-        uint256 reward
+        uint256 reward,
+        uint256 duration
     );
 
     error FailedToSendExpiredReward();
