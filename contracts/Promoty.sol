@@ -14,7 +14,7 @@ contract Promoty is IPromoty, Ownable {
 
     address public idRegistry;
 
-    mapping(bytes => mapping(uint256 => Reward)) private _rewards;
+    mapping(bytes20 => mapping(uint256 => Reward)) private _rewards;
 
     constructor(address idRegistry_) Ownable(msg.sender) {
         idRegistry = idRegistry_;
@@ -28,7 +28,7 @@ contract Promoty is IPromoty, Ownable {
         bytes memory message,
         uint256 recasterFid
     ) external {
-        (, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
+        (, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
 
         Reward storage reward = _rewards[messageHash][recasterFid];
         uint256 expiredReceiverFid = reward.expiredReceiverFid;
@@ -46,20 +46,20 @@ contract Promoty is IPromoty, Ownable {
 
     /// @inheritdoc IPromoty
     function claimReward(bytes32 publicKey, bytes32 r, bytes32 s, bytes memory message) external {
-        (MessageData memory messageData, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
+        (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
 
-        bytes memory recastedMessageHash;
+        bytes20 recastedMessageHash;
         uint256 recasterFid = messageData.fid;
 
         if (
             messageData.type_ == MessageType.MESSAGE_TYPE_REACTION_ADD &&
             messageData.reaction_body.type_ == ReactionType.REACTION_TYPE_RECAST
         ) {
-            recastedMessageHash = messageData.reaction_body.target_cast_id.hash_;
+            recastedMessageHash = bytes20(messageData.reaction_body.target_cast_id.hash_);
         } else if (
             messageData.type_ == MessageType.MESSAGE_TYPE_CAST_ADD && messageData.cast_add_body.embeds.length > 0
         ) {
-            recastedMessageHash = messageData.cast_add_body.embeds[0].cast_id.hash_;
+            recastedMessageHash = bytes20(messageData.cast_add_body.embeds[0].cast_id.hash_);
         } else {
             revert NoReward();
         }
@@ -92,7 +92,7 @@ contract Promoty is IPromoty, Ownable {
         uint64 duration
     ) external payable {
         if (msg.value == 0) revert InvalidValue();
-        (MessageData memory messageData, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
+        (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
         if (messageData.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidMessageType();
         uint256 currentRewardValue = _rewards[messageHash][recasterFid].amount;
         _rewards[messageHash][recasterFid] = Reward(
@@ -122,12 +122,12 @@ contract Promoty is IPromoty, Ownable {
         bytes32 r,
         bytes32 s,
         bytes memory message
-    ) internal pure returns (MessageData memory, bytes memory) {
+    ) internal pure returns (MessageData memory, bytes20) {
         bytes memory messageHash = Blake3.hash(message, 20);
         bool valid = Ed25519.verify(publicKey, r, s, messageHash);
         if (!valid) revert InvalidSignature();
         (bool success, , MessageData memory messageData) = MessageDataCodec.decode(0, message, uint64(message.length));
         if (!success) revert InvalidEncoding();
-        return (messageData, messageHash);
+        return (messageData, bytes20(messageHash));
     }
 }
