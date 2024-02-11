@@ -3,7 +3,7 @@ import { resolve } from "path"
 import { HardhatUserConfig } from "hardhat/config"
 import "@nomicfoundation/hardhat-toolbox"
 import "@nomicfoundation/hardhat-ethers"
-import "@nomicfoundation/hardhat-verify";
+import "@nomicfoundation/hardhat-verify"
 
 import "./task"
 
@@ -21,13 +21,13 @@ const config: HardhatUserConfig = {
       accounts: [privateKey as string],
       chainId: 10,
       url: process.env.OPTIMISM_JSON_RPC_URL,
-      gasPrice: 0.005e9,
+      gasPrice: 0.004e9,
     },
   },
   etherscan: {
     apiKey: {
-      optimisticEthereum: process.env.OPTIMISM_API_KEY as string
-    }
+      optimisticEthereum: process.env.OPTIMISM_API_KEY as string,
+    },
   },
   gasReporter: {
     currency: "USD",
@@ -44,6 +44,7 @@ const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.20",
     settings: {
+      evmVersion: "paris",
       optimizer: {
         enabled: true,
         runs: 10000,
@@ -51,8 +52,8 @@ const config: HardhatUserConfig = {
     },
   },
   sourcify: {
-    enabled: false
-  }
+    enabled: false,
+  },
 }
 
 export default config
