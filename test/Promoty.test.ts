@@ -331,7 +331,7 @@ describe("Promoty", () => {
     await time.increase(duration + 1)
     await expect(promoty.connect(relayer).claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID))
       .to.emit(promoty, "ExpiredRewardClaimed")
-      .withArgs(hashMessageDataToRecast, USER_FID, reward)
+      .withArgs("0x" + hashMessageDataToRecast.toString("hex"), USER_FID, reward)
     const balanceAfter = await ethers.provider.getBalance(owner.address)
     expect(balanceAfter).to.be.eq(balanceBefore + reward)
   })

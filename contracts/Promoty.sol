@@ -67,7 +67,6 @@ contract Promoty is IPromoty, Ownable {
         Reward storage reward = _rewards[recastedMessageHash][recasterFid];
         uint256 rewardAmount = reward.amount;
         if (rewardAmount == 0) revert NoReward();
-        // NOTE: using message.timestamp could allow an "attacker" to sign the message and don't broadcasting for a long time
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recasterFid];
 
