@@ -31,17 +31,17 @@ contract Promoty is IPromoty, Ownable {
         (, bytes memory messageHash) = _verifyMessage(publicKey, r, s, message);
 
         Reward storage reward = _rewards[messageHash][recasterFid];
-        uint256 creatorFid = reward.creatorFid;
-        if (creatorFid == 0) revert NoReward();
+        uint256 expiredReceiverFid = reward.expiredReceiverFid;
+        if (expiredReceiverFid == 0) revert NoReward();
         uint256 rewardAmount = reward.amount;
-        address rewardCreator = IIdRegistry(idRegistry).custodyOf(reward.creatorFid);
+        address rewardCreator = IIdRegistry(idRegistry).custodyOf(reward.expiredReceiverFid);
         if (rewardCreator == address(0)) revert InvalidFid();
         if (block.timestamp <= reward.expiresAt) revert RewardNotExpired();
         delete _rewards[messageHash][recasterFid];
 
         (bool sent, ) = rewardCreator.call{ value: rewardAmount }("");
         if (!sent) revert FailedToSendExpiredReward();
-        emit ExpiredRewardClaimed(messageHash, creatorFid, rewardAmount);
+        emit ExpiredRewardClaimed(messageHash, expiredReceiverFid, rewardAmount);
     }
 
     /// @inheritdoc IPromoty
@@ -88,6 +88,7 @@ contract Promoty is IPromoty, Ownable {
         bytes32 s,
         bytes memory message,
         uint256 recasterFid,
+        uint256 expiredReceiverFid,
         uint64 duration
     ) external payable {
         if (msg.value == 0) revert InvalidValue();
@@ -97,7 +98,7 @@ contract Promoty is IPromoty, Ownable {
         _rewards[messageHash][recasterFid] = Reward(
             currentRewardValue + msg.value,
             block.timestamp + duration,
-            messageData.fid
+            expiredReceiverFid
         );
         emit RecastRewarded(messageHash, recasterFid, msg.value);
     }

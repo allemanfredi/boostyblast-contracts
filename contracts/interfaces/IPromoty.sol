@@ -5,10 +5,10 @@ interface IPromoty {
     struct Reward {
         uint256 amount;
         uint256 expiresAt;
-        uint256 creatorFid;
+        uint256 expiredReceiverFid;
     }
 
-    event ExpiredRewardClaimed(bytes indexed messageHash, uint256 indexed creatorFid, uint256 reward);
+    event ExpiredRewardClaimed(bytes indexed messageHash, uint256 indexed expiredReceiverFid, uint256 reward);
     event IdRegistrySet(address idRegistry);
     event RewardClaimed(bytes indexed messageHash, uint256 indexed recasterFid, uint256 reward);
     event RecastRewarded(bytes indexed messageHash, uint256 indexed recasterFid, uint256 reward);
@@ -42,6 +42,7 @@ interface IPromoty {
         bytes32 s,
         bytes memory message,
         uint256 recasterFid,
+        uint256 expiredReceiverFid,
         uint64 duration
     ) external payable;
 
