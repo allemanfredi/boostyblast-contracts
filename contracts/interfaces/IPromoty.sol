@@ -10,7 +10,12 @@ interface IPromoty {
 
     event ExpiredRewardClaimed(bytes20 indexed messageHash, uint256 indexed expiredReceiverFid, uint256 reward);
     event IdRegistrySet(address idRegistry);
-    event RewardClaimed(bytes20 indexed messageHash, uint256 indexed recasterFid, uint256 reward);
+    event RewardClaimed(
+        bytes20 indexed messageHash,
+        bytes20 indexed recastedMessageHash,
+        uint256 indexed recasterFid,
+        uint256 reward
+    );
     event RecastRewarded(
         bytes20 indexed messageHash,
         uint256 indexed creatorFid,

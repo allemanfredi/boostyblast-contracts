@@ -119,7 +119,12 @@ describe("Promoty", () => {
     const balanceBeforeReceiver = await ethers.provider.getBalance(expiredReceiver.address)
     await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
       .to.emit(promoty, "RewardClaimed")
-      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward)
+      .withArgs(
+        "0x" + messageDataToClaimRewardHash.toString("hex"),
+        "0x" + hashMessageDataToRecast.toString("hex"),
+        INFLUENCER_FID,
+        recasterReward,
+      )
     const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
     await promoty.withdrawAll(expiredReceiver.address)
@@ -175,7 +180,12 @@ describe("Promoty", () => {
     const balanceBeforeReceiver = await ethers.provider.getBalance(expiredReceiver.address)
     await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
       .to.emit(promoty, "RewardClaimed")
-      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward)
+      .withArgs(
+        "0x" + messageDataToClaimRewardHash.toString("hex"),
+        "0x" + hashMessageDataToRecast.toString("hex"),
+        INFLUENCER_FID,
+        recasterReward,
+      )
     const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
     await promoty.withdrawAll(expiredReceiver.address)
@@ -239,7 +249,12 @@ describe("Promoty", () => {
     const balanceBeforeRecaster = await ethers.provider.getBalance(influencer.address)
     await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
       .to.emit(promoty, "RewardClaimed")
-      .withArgs("0x" + messageDataToClaimRewardHash.toString("hex"), INFLUENCER_FID, recasterReward + recasterReward)
+      .withArgs(
+        "0x" + messageDataToClaimRewardHash.toString("hex"),
+        "0x" + Buffer.from(hashMessageDataToRecast).toString("hex"),
+        INFLUENCER_FID,
+        recasterReward + recasterReward,
+      )
     const balanceAfterRecaster = await ethers.provider.getBalance(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward + recasterReward)
   })

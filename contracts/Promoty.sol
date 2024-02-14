@@ -78,7 +78,7 @@ contract Promoty is IPromoty, Ownable {
 
         (bool sent, ) = recaster.call{ value: recasterRewardAmount }("");
         if (!sent) revert FailedToSendReward();
-        emit RewardClaimed(messageHash, recasterFid, recasterRewardAmount);
+        emit RewardClaimed(messageHash, recastedMessageHash, recasterFid, recasterRewardAmount);
     }
 
     /// @inheritdoc IPromoty
