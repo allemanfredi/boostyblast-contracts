@@ -6,34 +6,41 @@ interface IPromoty {
         uint256 amount;
         uint256 expiresAt;
         uint256 expiredReceiverFid;
+        address asset;
     }
 
-    event ExpiredRewardClaimed(bytes20 indexed messageHash, uint256 indexed expiredReceiverFid, uint256 reward);
+    event AssetDisabled(address indexed asset);
+    event AssetEnabled(address indexed asset);
+    event ExpiredRewardClaimed(
+        bytes20 indexed messageHash,
+        uint256 indexed expiredReceiverFid,
+        address asset,
+        uint256 amount
+    );
     event IdRegistrySet(address idRegistry);
     event RewardClaimed(
         bytes20 indexed messageHash,
         bytes20 indexed recastedMessageHash,
         uint256 indexed recasterFid,
-        uint256 reward
+        address asset,
+        uint256 amount
     );
     event RecastRewarded(
         bytes20 indexed messageHash,
         uint256 indexed creatorFid,
         uint256 indexed recasterFid,
-        uint256 reward,
+        address asset,
+        uint256 amount,
         uint256 duration
     );
 
-    error FailedToSendExpiredReward();
-    error FailedToSendReward();
-    error FailedToWithdraw();
+    error AssetNotEnabled(address asset);
     error InvalidSignature();
     error InvalidEncoding();
     error InvalidFid();
     error InvalidMessageType();
-    error InvalidValue();
+    error InvalidAmount();
     error NoReward();
-    error NothingToWithdraw();
     error RewardExpired();
     error RewardNotExpired();
 
@@ -47,6 +54,12 @@ interface IPromoty {
 
     function claimReward(bytes32 publicKey, bytes32 r, bytes32 s, bytes memory message) external;
 
+    function disableAsset(address asset) external;
+
+    function enableAsset(address asset) external;
+
+    function isAssetEnabled(address asset) external view returns (bool);
+
     function rewardRecast(
         bytes32 publicKey,
         bytes32 r,
@@ -54,10 +67,12 @@ interface IPromoty {
         bytes memory message,
         uint256 recasterFid,
         uint256 expiredReceiverFid,
+        address asset,
+        uint256 amount,
         uint64 duration
     ) external payable;
 
     function setIdRegistry(address idRegistry_) external;
 
-    function withdrawAll(address receiver) external;
+    function withdrawAsset(address asset, address receiver, uint256 amount) external;
 }

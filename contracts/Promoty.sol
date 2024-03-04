@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MessageDataCodec, MessageData, MessageType, ReactionType } from "farcaster-solidity/contracts/protobufs/message.proto.sol";
 import { Blake3 } from "farcaster-solidity/contracts/libraries/Blake3.sol";
 import { Ed25519 } from "farcaster-solidity/contracts/libraries/Ed25519.sol";
@@ -15,6 +16,7 @@ contract Promoty is IPromoty, Ownable {
     address public idRegistry;
 
     mapping(bytes20 => mapping(uint256 => Reward)) private _rewards;
+    mapping(address => bool) private _enabledAssets;
 
     constructor(address idRegistry_) Ownable(msg.sender) {
         idRegistry = idRegistry_;
@@ -34,14 +36,13 @@ contract Promoty is IPromoty, Ownable {
         uint256 expiredReceiverFid = reward.expiredReceiverFid;
         if (expiredReceiverFid == 0) revert NoReward();
         uint256 rewardAmount = reward.amount;
+        address rewardAsset = reward.asset;
         address rewardCreator = IIdRegistry(idRegistry).custodyOf(reward.expiredReceiverFid);
         if (rewardCreator == address(0)) revert InvalidFid();
         if (block.timestamp <= reward.expiresAt) revert RewardNotExpired();
         delete _rewards[messageHash][recasterFid];
-
-        (bool sent, ) = rewardCreator.call{ value: rewardAmount }("");
-        if (!sent) revert FailedToSendExpiredReward();
-        emit ExpiredRewardClaimed(messageHash, expiredReceiverFid, rewardAmount);
+        IERC20(rewardAsset).transfer(rewardCreator, rewardAmount);
+        emit ExpiredRewardClaimed(messageHash, expiredReceiverFid, rewardAsset, rewardAmount);
     }
 
     /// @inheritdoc IPromoty
@@ -66,6 +67,7 @@ contract Promoty is IPromoty, Ownable {
 
         Reward storage reward = _rewards[recastedMessageHash][recasterFid];
         uint256 rewardAmount = reward.amount;
+        address rewardAsset = reward.asset;
         if (rewardAmount == 0) revert NoReward();
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recasterFid];
@@ -76,9 +78,25 @@ contract Promoty is IPromoty, Ownable {
         address recaster = IIdRegistry(idRegistry).custodyOf(recasterFid);
         if (recaster == address(0)) revert InvalidFid();
 
-        (bool sent, ) = recaster.call{ value: recasterRewardAmount }("");
-        if (!sent) revert FailedToSendReward();
-        emit RewardClaimed(messageHash, recastedMessageHash, recasterFid, recasterRewardAmount);
+        IERC20(rewardAsset).transfer(recaster, recasterRewardAmount);
+        emit RewardClaimed(messageHash, recastedMessageHash, recasterFid, rewardAsset, recasterRewardAmount);
+    }
+
+    /// @inheritdoc IPromoty
+    function disableAsset(address asset) external onlyOwner {
+        _enabledAssets[asset] = false;
+        emit AssetDisabled(asset);
+    }
+
+    /// @inheritdoc IPromoty
+    function enableAsset(address asset) external onlyOwner {
+        _enabledAssets[asset] = true;
+        emit AssetEnabled(asset);
+    }
+
+    /// @inheritdoc IPromoty
+    function isAssetEnabled(address asset) external view returns (bool) {
+        return _enabledAssets[asset];
     }
 
     /// @inheritdoc IPromoty
@@ -89,18 +107,23 @@ contract Promoty is IPromoty, Ownable {
         bytes memory message,
         uint256 recasterFid,
         uint256 expiredReceiverFid,
+        address asset,
+        uint256 amount,
         uint64 duration
     ) external payable {
-        if (msg.value == 0) revert InvalidValue();
+        if (!_enabledAssets[asset]) revert AssetNotEnabled(asset);
+        if (amount == 0) revert InvalidAmount();
+        IERC20(asset).transferFrom(msg.sender, address(this), amount);
         (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
         if (messageData.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidMessageType();
         uint256 currentRewardValue = _rewards[messageHash][recasterFid].amount;
         _rewards[messageHash][recasterFid] = Reward(
-            currentRewardValue + msg.value,
+            currentRewardValue + amount,
             block.timestamp + duration,
-            expiredReceiverFid
+            expiredReceiverFid,
+            asset
         );
-        emit RecastRewarded(messageHash, messageData.fid, recasterFid, msg.value, duration);
+        emit RecastRewarded(messageHash, messageData.fid, recasterFid, asset, amount, duration);
     }
 
     /// @inheritdoc IPromoty
@@ -110,11 +133,8 @@ contract Promoty is IPromoty, Ownable {
     }
 
     /// @inheritdoc IPromoty
-    function withdrawAll(address receiver) external onlyOwner {
-        uint256 amount = address(this).balance;
-        if (amount == 0) revert NothingToWithdraw();
-        (bool sent, ) = receiver.call{ value: amount }("");
-        if (!sent) revert FailedToWithdraw();
+    function withdrawAsset(address asset, address receiver, uint256 amount) external onlyOwner {
+        IERC20(asset).transfer(receiver, amount);
     }
 
     function _verifyMessage(
