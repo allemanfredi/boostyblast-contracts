@@ -58,6 +58,8 @@ interface IPromoty {
 
     function enableAsset(address asset) external;
 
+    function getReward(bytes20 messageHash, uint256 recasterFid) external view returns (Reward memory);
+
     function isAssetEnabled(address asset) external view returns (bool);
 
     function rewardRecast(

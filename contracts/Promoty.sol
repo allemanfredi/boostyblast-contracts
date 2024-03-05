@@ -95,6 +95,11 @@ contract Promoty is IPromoty, Ownable {
     }
 
     /// @inheritdoc IPromoty
+    function getReward(bytes20 messageHash, uint256 recasterFid) external view returns (Reward memory) {
+        return _rewards[messageHash][recasterFid];
+    }
+
+    /// @inheritdoc IPromoty
     function isAssetEnabled(address asset) external view returns (bool) {
         return _enabledAssets[asset];
     }
