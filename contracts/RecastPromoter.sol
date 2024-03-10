@@ -6,10 +6,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { MessageDataCodec, MessageData, MessageType, ReactionType } from "farcaster-solidity/contracts/protobufs/message.proto.sol";
 import { Blake3 } from "farcaster-solidity/contracts/libraries/Blake3.sol";
 import { Ed25519 } from "farcaster-solidity/contracts/libraries/Ed25519.sol";
-import { IPromoty } from "./interfaces/IPromoty.sol";
+import { IRecastPromoter } from "./interfaces/IRecastPromoter.sol";
 import { IIdRegistry } from "./interfaces/IIdRegistry.sol";
 
-contract Promoty is IPromoty, Ownable {
+contract RecastPromoter is IRecastPromoter, Ownable {
     uint256 public constant FEE = 50; // 0.5%
     uint256 public constant PERCENTAGE_DIVISOR = 10000;
 
@@ -22,7 +22,7 @@ contract Promoty is IPromoty, Ownable {
         idRegistry = idRegistry_;
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function claimExpiredReward(
         bytes32 publicKey,
         bytes32 r,
@@ -45,7 +45,7 @@ contract Promoty is IPromoty, Ownable {
         emit ExpiredRewardClaimed(messageHash, expiredReceiverFid, rewardAsset, rewardAmount);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function claimReward(bytes32 publicKey, bytes32 r, bytes32 s, bytes memory message) external {
         (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
 
@@ -82,29 +82,29 @@ contract Promoty is IPromoty, Ownable {
         emit RewardClaimed(messageHash, recastedMessageHash, recasterFid, rewardAsset, recasterRewardAmount);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function disableAsset(address asset) external onlyOwner {
         _enabledAssets[asset] = false;
         emit AssetDisabled(asset);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function enableAsset(address asset) external onlyOwner {
         _enabledAssets[asset] = true;
         emit AssetEnabled(asset);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function getReward(bytes20 messageHash, uint256 recasterFid) external view returns (Reward memory) {
         return _rewards[messageHash][recasterFid];
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function isAssetEnabled(address asset) external view returns (bool) {
         return _enabledAssets[asset];
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function rewardRecast(
         bytes32 publicKey,
         bytes32 r,
@@ -131,13 +131,13 @@ contract Promoty is IPromoty, Ownable {
         emit RecastRewarded(messageHash, messageData.fid, recasterFid, asset, amount, duration);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function setIdRegistry(address idRegistry_) external onlyOwner {
         idRegistry = idRegistry_;
         emit IdRegistrySet(idRegistry_);
     }
 
-    /// @inheritdoc IPromoty
+    /// @inheritdoc IRecastPromoter
     function withdrawAsset(address asset, address receiver, uint256 amount) external onlyOwner {
         IERC20(asset).transfer(receiver, amount);
     }

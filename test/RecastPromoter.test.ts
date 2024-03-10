@@ -14,9 +14,9 @@ const EXPIRED_RECEIVER_FID = 12
 const ed25519Signer = Factories.Ed25519Signer.build()
 const ed25519Influencer = Factories.Ed25519Signer.build()
 
-describe("Promoty", () => {
+describe("RecastPromoter", () => {
   let messageDataToRecast: MessageData
-  let promoty: any,
+  let recastPromoter: any,
     idRegistry: any,
     relayer: any,
     asset: any,
@@ -39,7 +39,7 @@ describe("Promoty", () => {
     })
     const ed25519 = await Ed25519.deploy()
 
-    const Promoty = await ethers.getContractFactory("Promoty", {
+    const RecastPromoter = await ethers.getContractFactory("RecastPromoter", {
       libraries: {
         Blake3: blake3.target,
         Ed25519: ed25519.target,
@@ -56,7 +56,7 @@ describe("Promoty", () => {
 
     idRegistry = await MockIdRegistry.deploy()
     asset = await Token.deploy("Token", "TKN", ethers.parseEther("100000"))
-    promoty = await Promoty.deploy(await idRegistry.getAddress())
+    recastPromoter = await RecastPromoter.deploy(await idRegistry.getAddress())
 
     await idRegistry.setAddressForFid(INFLUENCER_FID, influencer.address)
     await idRegistry.setAddressForFid(USER_FID, owner.address)
@@ -80,8 +80,8 @@ describe("Promoty", () => {
       },
     }
 
-    await expect(promoty.enableAsset(await asset.getAddress()))
-      .to.emit(promoty, "AssetEnabled")
+    await expect(recastPromoter.enableAsset(await asset.getAddress()))
+      .to.emit(recastPromoter, "AssetEnabled")
       .withArgs(await asset.getAddress())
   })
 
@@ -95,9 +95,9 @@ describe("Promoty", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
+    await asset.approve(await recastPromoter.getAddress(), reward)
     await expect(
-      promoty.rewardRecast(
+      recastPromoter.rewardRecast(
         pubKey,
         signature.r,
         signature.s,
@@ -109,7 +109,7 @@ describe("Promoty", () => {
         duration,
       ),
     )
-      .to.emit(promoty, "RecastRewarded")
+      .to.emit(recastPromoter, "RecastRewarded")
       .withArgs(
         "0x" + hashMessageDataToRecast.toString("hex"),
         USER_FID,
@@ -140,8 +140,8 @@ describe("Promoty", () => {
 
     const balanceBeforeRecaster = await asset.balanceOf(influencer.address)
     const balanceBeforeReceiver = await asset.balanceOf(expiredReceiver.address)
-    await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
-      .to.emit(promoty, "RewardClaimed")
+    await expect(recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
+      .to.emit(recastPromoter, "RewardClaimed")
       .withArgs(
         "0x" + messageDataToClaimRewardHash.toString("hex"),
         "0x" + hashMessageDataToRecast.toString("hex"),
@@ -151,7 +151,7 @@ describe("Promoty", () => {
       )
     const balanceAfterRecaster = await asset.balanceOf(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
-    await promoty.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
+    await recastPromoter.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
     const balanceAfterReceiver = await asset.balanceOf(expiredReceiver.address)
     expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })
@@ -166,9 +166,9 @@ describe("Promoty", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
+    await asset.approve(await recastPromoter.getAddress(), reward)
     await expect(
-      promoty.rewardRecast(
+      recastPromoter.rewardRecast(
         pubKey,
         signature.r,
         signature.s,
@@ -180,7 +180,7 @@ describe("Promoty", () => {
         duration,
       ),
     )
-      .to.emit(promoty, "RecastRewarded")
+      .to.emit(recastPromoter, "RecastRewarded")
       .withArgs(
         "0x" + hashMessageDataToRecast.toString("hex"),
         USER_FID,
@@ -218,8 +218,8 @@ describe("Promoty", () => {
 
     const balanceBeforeRecaster = await asset.balanceOf(influencer.address)
     const balanceBeforeReceiver = await asset.balanceOf(expiredReceiver.address)
-    await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
-      .to.emit(promoty, "RewardClaimed")
+    await expect(recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
+      .to.emit(recastPromoter, "RewardClaimed")
       .withArgs(
         "0x" + messageDataToClaimRewardHash.toString("hex"),
         "0x" + hashMessageDataToRecast.toString("hex"),
@@ -229,7 +229,7 @@ describe("Promoty", () => {
       )
     const balanceAfterRecaster = await asset.balanceOf(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
-    await promoty.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
+    await recastPromoter.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
     const balanceAfterReceiver = await asset.balanceOf(expiredReceiver.address)
     expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })
@@ -243,8 +243,8 @@ describe("Promoty", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -255,8 +255,8 @@ describe("Promoty", () => {
       reward,
       duration,
     )
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -288,8 +288,8 @@ describe("Promoty", () => {
     const messageDataToClaimRewardHash = await hashMessage(message)
 
     const balanceBeforeRecaster = await asset.balanceOf(influencer.address)
-    await expect(promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
-      .to.emit(promoty, "RewardClaimed")
+    await expect(recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message))
+      .to.emit(recastPromoter, "RewardClaimed")
       .withArgs(
         "0x" + messageDataToClaimRewardHash.toString("hex"),
         "0x" + Buffer.from(hashMessageDataToRecast).toString("hex"),
@@ -309,8 +309,8 @@ describe("Promoty", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -341,8 +341,8 @@ describe("Promoty", () => {
     message = MessageData.encode(messageDataToClaimReward).finish()
 
     await expect(
-      promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
-    ).to.be.revertedWithCustomError(promoty, "InvalidFid")
+      recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
+    ).to.be.revertedWithCustomError(recastPromoter, "InvalidFid")
   })
 
   it("should not be able to get a reward if a normal cast is provided", async () => {
@@ -351,8 +351,8 @@ describe("Promoty", () => {
     let pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     let message = MessageData.encode(messageDataToRecast).finish()
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -364,8 +364,8 @@ describe("Promoty", () => {
       1000 * 60 * 60,
     ),
       await expect(
-        promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
-      ).to.be.revertedWithCustomError(promoty, "NoReward")
+        recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
+      ).to.be.revertedWithCustomError(recastPromoter, "NoReward")
   })
 
   it("should not be able to get a reward on a recast if a reward is expired", async () => {
@@ -376,8 +376,8 @@ describe("Promoty", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -408,8 +408,8 @@ describe("Promoty", () => {
     pubKey = (await ed25519Influencer.getSignerKey())._unsafeUnwrap()
     message = MessageData.encode(messageDataToClaimReward).finish()
     await expect(
-      promoty.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
-    ).to.be.revertedWithCustomError(promoty, "RewardExpired")
+      recastPromoter.connect(relayer).claimReward(pubKey, signature.r, signature.s, message),
+    ).to.be.revertedWithCustomError(recastPromoter, "RewardExpired")
   })
 
   it("should be able to claim an expired reward", async () => {
@@ -420,8 +420,8 @@ describe("Promoty", () => {
     const message = MessageData.encode(messageDataToRecast).finish()
     const hashMessageDataToRecast = await hashMessage(message)
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -435,8 +435,10 @@ describe("Promoty", () => {
 
     const balanceBefore = await asset.balanceOf(expiredReceiver.address)
     await time.increase(duration + 1)
-    await expect(promoty.connect(relayer).claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID))
-      .to.emit(promoty, "ExpiredRewardClaimed")
+    await expect(
+      recastPromoter.connect(relayer).claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID),
+    )
+      .to.emit(recastPromoter, "ExpiredRewardClaimed")
       .withArgs("0x" + hashMessageDataToRecast.toString("hex"), EXPIRED_RECEIVER_FID, await asset.getAddress(), reward)
     const balanceAfter = await asset.balanceOf(expiredReceiver.address)
     expect(balanceAfter).to.be.eq(balanceBefore + reward)
@@ -449,8 +451,8 @@ describe("Promoty", () => {
     const pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     const message = MessageData.encode(messageDataToRecast).finish()
 
-    await asset.approve(await promoty.getAddress(), reward)
-    await promoty.rewardRecast(
+    await asset.approve(await recastPromoter.getAddress(), reward)
+    await recastPromoter.rewardRecast(
       pubKey,
       signature.r,
       signature.s,
@@ -463,8 +465,8 @@ describe("Promoty", () => {
     )
 
     await expect(
-      promoty.claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID),
-    ).to.be.revertedWithCustomError(promoty, "RewardNotExpired")
+      recastPromoter.claimExpiredReward(pubKey, signature.r, signature.s, message, INFLUENCER_FID),
+    ).to.be.revertedWithCustomError(recastPromoter, "RewardNotExpired")
   })
 
   it("should not be able reward a recast with a not enabled token", async () => {
@@ -474,11 +476,11 @@ describe("Promoty", () => {
     const pubKey = (await ed25519Signer.getSignerKey())._unsafeUnwrap()
     const message = MessageData.encode(messageDataToRecast).finish()
 
-    await expect(promoty.disableAsset(await asset.getAddress()))
-      .to.emit(promoty, "AssetDisabled")
+    await expect(recastPromoter.disableAsset(await asset.getAddress()))
+      .to.emit(recastPromoter, "AssetDisabled")
       .withArgs(await asset.getAddress())
     await expect(
-      promoty.rewardRecast(
+      recastPromoter.rewardRecast(
         pubKey,
         signature.r,
         signature.s,
@@ -490,7 +492,7 @@ describe("Promoty", () => {
         duration,
       ),
     )
-      .to.be.revertedWithCustomError(promoty, "AssetNotEnabled")
+      .to.be.revertedWithCustomError(recastPromoter, "AssetNotEnabled")
       .withArgs(await asset.getAddress())
   })
 })

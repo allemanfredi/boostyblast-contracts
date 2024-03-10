@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-interface IPromoty {
+interface IRecastPromoter {
     struct Reward {
         uint256 amount;
         uint256 expiresAt;
