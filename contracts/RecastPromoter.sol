@@ -105,7 +105,7 @@ contract RecastPromoter is IRecastPromoter, Ownable {
     }
 
     /// @inheritdoc IRecastPromoter
-    function rewardRecast(
+    function rewardRecastOrQuote(
         bytes32 publicKey,
         bytes32 r,
         bytes32 s,
@@ -122,13 +122,9 @@ contract RecastPromoter is IRecastPromoter, Ownable {
         (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);
         if (messageData.type_ != MessageType.MESSAGE_TYPE_CAST_ADD) revert InvalidMessageType();
         uint256 currentRewardValue = _rewards[messageHash][recasterFid].amount;
-        _rewards[messageHash][recasterFid] = Reward(
-            currentRewardValue + amount,
-            block.timestamp + duration,
-            expiredReceiverFid,
-            asset
-        );
-        emit RecastRewarded(messageHash, messageData.fid, recasterFid, asset, amount, duration);
+        uint256 expiresAt = block.timestamp + duration;
+        _rewards[messageHash][recasterFid] = Reward(currentRewardValue + amount, expiresAt, expiredReceiverFid, asset);
+        emit Promoted(messageHash, messageData.fid, recasterFid, asset, amount, expiresAt);
     }
 
     /// @inheritdoc IRecastPromoter

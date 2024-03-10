@@ -25,13 +25,13 @@ interface IRecastPromoter {
         address asset,
         uint256 amount
     );
-    event RecastRewarded(
+    event Promoted(
         bytes20 indexed messageHash,
         uint256 indexed creatorFid,
         uint256 indexed recasterFid,
         address asset,
         uint256 amount,
-        uint256 duration
+        uint256 expiresAt
     );
 
     error AssetNotEnabled(address asset);
@@ -62,7 +62,7 @@ interface IRecastPromoter {
 
     function isAssetEnabled(address asset) external view returns (bool);
 
-    function rewardRecast(
+    function rewardRecastOrQuote(
         bytes32 publicKey,
         bytes32 r,
         bytes32 s,

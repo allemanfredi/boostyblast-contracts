@@ -97,7 +97,7 @@ describe("RecastPromoter", () => {
 
     await asset.approve(await recastPromoter.getAddress(), reward)
     await expect(
-      recastPromoter.rewardRecast(
+      recastPromoter.rewardRecastOrQuote(
         pubKey,
         signature.r,
         signature.s,
@@ -109,14 +109,14 @@ describe("RecastPromoter", () => {
         duration,
       ),
     )
-      .to.emit(recastPromoter, "RecastRewarded")
+      .to.emit(recastPromoter, "Promoted")
       .withArgs(
         "0x" + hashMessageDataToRecast.toString("hex"),
         USER_FID,
         INFLUENCER_FID,
         await asset.getAddress(),
         reward,
-        duration,
+        await time.latest() + 1 + duration,
       )
 
     const messageDataToClaimReward: MessageData = {
@@ -168,7 +168,7 @@ describe("RecastPromoter", () => {
 
     await asset.approve(await recastPromoter.getAddress(), reward)
     await expect(
-      recastPromoter.rewardRecast(
+      recastPromoter.rewardRecastOrQuote(
         pubKey,
         signature.r,
         signature.s,
@@ -180,14 +180,14 @@ describe("RecastPromoter", () => {
         duration,
       ),
     )
-      .to.emit(recastPromoter, "RecastRewarded")
+      .to.emit(recastPromoter, "Promoted")
       .withArgs(
         "0x" + hashMessageDataToRecast.toString("hex"),
         USER_FID,
         INFLUENCER_FID,
         await asset.getAddress(),
         reward,
-        duration,
+        await time.latest() + 1 + duration,
       )
 
     const messageDataToClaimReward: MessageData = {
@@ -244,7 +244,7 @@ describe("RecastPromoter", () => {
     const hashMessageDataToRecast = await hashMessage(message)
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -256,7 +256,7 @@ describe("RecastPromoter", () => {
       duration,
     )
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -310,7 +310,7 @@ describe("RecastPromoter", () => {
     const hashMessageDataToRecast = await hashMessage(message)
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -352,7 +352,7 @@ describe("RecastPromoter", () => {
     let message = MessageData.encode(messageDataToRecast).finish()
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -377,7 +377,7 @@ describe("RecastPromoter", () => {
     const hashMessageDataToRecast = await hashMessage(message)
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -421,7 +421,7 @@ describe("RecastPromoter", () => {
     const hashMessageDataToRecast = await hashMessage(message)
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -452,7 +452,7 @@ describe("RecastPromoter", () => {
     const message = MessageData.encode(messageDataToRecast).finish()
 
     await asset.approve(await recastPromoter.getAddress(), reward)
-    await recastPromoter.rewardRecast(
+    await recastPromoter.rewardRecastOrQuote(
       pubKey,
       signature.r,
       signature.s,
@@ -480,7 +480,7 @@ describe("RecastPromoter", () => {
       .to.emit(recastPromoter, "AssetDisabled")
       .withArgs(await asset.getAddress())
     await expect(
-      recastPromoter.rewardRecast(
+      recastPromoter.rewardRecastOrQuote(
         pubKey,
         signature.r,
         signature.s,
