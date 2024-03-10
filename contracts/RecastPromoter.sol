@@ -8,18 +8,18 @@ import { Blake3 } from "farcaster-solidity/contracts/libraries/Blake3.sol";
 import { Ed25519 } from "farcaster-solidity/contracts/libraries/Ed25519.sol";
 import { IRecastPromoter } from "./interfaces/IRecastPromoter.sol";
 import { IIdRegistry } from "./interfaces/IIdRegistry.sol";
+import { AssetsManager } from "./AssetsManager.sol";
 
-contract RecastPromoter is IRecastPromoter, Ownable {
+contract RecastPromoter is IRecastPromoter, Ownable, AssetsManager {
     uint256 public constant FEE_PERCENTAGE = 50; // 0.5%
     uint256 public constant PERCENTAGE_DIVISOR = 10000;
 
     address public idRegistry;
 
     mapping(bytes20 => mapping(uint256 => Reward)) private _rewards;
-    mapping(address => bool) private _enabledAssets;
     mapping(address => uint256) private _accruedFees;
 
-    constructor(address idRegistry_) Ownable(msg.sender) {
+    constructor(address idRegistry_) Ownable(msg.sender) AssetsManager() {
         idRegistry = idRegistry_;
     }
 
@@ -84,26 +84,17 @@ contract RecastPromoter is IRecastPromoter, Ownable {
         emit RewardClaimed(messageHash, recastedMessageHash, recasterFid, rewardAsset, recasterRewardAmount);
     }
 
-    /// @inheritdoc IRecastPromoter
-    function disableAsset(address asset) external onlyOwner {
-        _enabledAssets[asset] = false;
-        emit AssetDisabled(asset);
+    function disableAsset(address asset) external override onlyOwner {
+        _disableAsset(asset);
     }
 
-    /// @inheritdoc IRecastPromoter
-    function enableAsset(address asset) external onlyOwner {
-        _enabledAssets[asset] = true;
-        emit AssetEnabled(asset);
+    function enableAsset(address asset) external override onlyOwner {
+        _enableAsset(asset);
     }
 
     /// @inheritdoc IRecastPromoter
     function getReward(bytes20 messageHash, uint256 recasterFid) external view returns (Reward memory) {
         return _rewards[messageHash][recasterFid];
-    }
-
-    /// @inheritdoc IRecastPromoter
-    function isAssetEnabled(address asset) external view returns (bool) {
-        return _enabledAssets[asset];
     }
 
     /// @inheritdoc IRecastPromoter
@@ -118,7 +109,7 @@ contract RecastPromoter is IRecastPromoter, Ownable {
         uint256 amount,
         uint64 duration
     ) external payable {
-        if (!_enabledAssets[asset]) revert AssetNotEnabled(asset);
+        if (!isAssetEnabled(asset)) revert AssetNotEnabled(asset);
         if (amount == 0) revert InvalidAmount();
         IERC20(asset).transferFrom(msg.sender, address(this), amount);
         (MessageData memory messageData, bytes20 messageHash) = _verifyMessage(publicKey, r, s, message);

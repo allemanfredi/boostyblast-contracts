@@ -9,8 +9,6 @@ interface IRecastPromoter {
         address asset;
     }
 
-    event AssetDisabled(address indexed asset);
-    event AssetEnabled(address indexed asset);
     event ExpiredRewardClaimed(
         bytes20 indexed messageHash,
         uint256 indexed expiredReceiverFid,
@@ -34,7 +32,6 @@ interface IRecastPromoter {
         uint256 expiresAt
     );
 
-    error AssetNotEnabled(address asset);
     error InvalidSignature();
     error InvalidEncoding();
     error InvalidFid();
@@ -54,13 +51,7 @@ interface IRecastPromoter {
 
     function claimReward(bytes32 publicKey, bytes32 r, bytes32 s, bytes memory message) external;
 
-    function disableAsset(address asset) external;
-
-    function enableAsset(address asset) external;
-
     function getReward(bytes20 messageHash, uint256 recasterFid) external view returns (Reward memory);
-
-    function isAssetEnabled(address asset) external view returns (bool);
 
     function rewardRecastOrQuote(
         bytes32 publicKey,
