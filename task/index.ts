@@ -25,7 +25,7 @@ task("PromoteReferenceModule:deploy")
   .addParam("hub")
   .addParam("moduleOwner")
   .setAction(async (_args, _hre) => {
-    console.log("Deploying RecastPromoter...")
+    console.log("Deploying PromoteReferenceModule...")
     const PromoteReferenceModule = await _hre.ethers.getContractFactory("PromoteReferenceModule")
     const promoteReferenceModule = await PromoteReferenceModule.deploy(_args.hub, _args.moduleOwner)
     console.log("PromoteReferenceModule deployed to:", await promoteReferenceModule.getAddress())

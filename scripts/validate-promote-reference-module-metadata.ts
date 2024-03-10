@@ -28,7 +28,7 @@ const main = async () => {
     processCalldataABI: JSON.stringify([]),
   })
 
-  console.log(metadata)
+  console.log(JSON.stringify(metadata))
 }
 
 main()
