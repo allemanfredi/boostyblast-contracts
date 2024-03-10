@@ -116,7 +116,7 @@ describe("RecastPromoter", () => {
         INFLUENCER_FID,
         await asset.getAddress(),
         reward,
-        await time.latest() + 1 + duration,
+        (await time.latest()) + 1 + duration,
       )
 
     const messageDataToClaimReward: MessageData = {
@@ -151,7 +151,7 @@ describe("RecastPromoter", () => {
       )
     const balanceAfterRecaster = await asset.balanceOf(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
-    await recastPromoter.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
+    await recastPromoter.withdrawAccruedFeesByAsset(await asset.getAddress(), expiredReceiver.address)
     const balanceAfterReceiver = await asset.balanceOf(expiredReceiver.address)
     expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })
@@ -187,7 +187,7 @@ describe("RecastPromoter", () => {
         INFLUENCER_FID,
         await asset.getAddress(),
         reward,
-        await time.latest() + 1 + duration,
+        (await time.latest()) + 1 + duration,
       )
 
     const messageDataToClaimReward: MessageData = {
@@ -229,7 +229,7 @@ describe("RecastPromoter", () => {
       )
     const balanceAfterRecaster = await asset.balanceOf(influencer.address)
     expect(balanceAfterRecaster).to.be.eq(balanceBeforeRecaster + recasterReward)
-    await recastPromoter.withdrawAsset(await asset.getAddress(), expiredReceiver.address, fee)
+    await recastPromoter.withdrawAccruedFeesByAsset(await asset.getAddress(), expiredReceiver.address)
     const balanceAfterReceiver = await asset.balanceOf(expiredReceiver.address)
     expect(balanceAfterReceiver).to.be.eq(balanceBeforeReceiver + fee)
   })

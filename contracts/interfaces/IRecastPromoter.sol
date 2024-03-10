@@ -76,5 +76,5 @@ interface IRecastPromoter {
 
     function setIdRegistry(address idRegistry_) external;
 
-    function withdrawAsset(address asset, address receiver, uint256 amount) external;
+    function withdrawAccruedFeesByAsset(address asset, address receiver) external;
 }

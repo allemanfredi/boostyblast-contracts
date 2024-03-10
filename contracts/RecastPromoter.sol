@@ -10,13 +10,14 @@ import { IRecastPromoter } from "./interfaces/IRecastPromoter.sol";
 import { IIdRegistry } from "./interfaces/IIdRegistry.sol";
 
 contract RecastPromoter is IRecastPromoter, Ownable {
-    uint256 public constant FEE = 50; // 0.5%
+    uint256 public constant FEE_PERCENTAGE = 50; // 0.5%
     uint256 public constant PERCENTAGE_DIVISOR = 10000;
 
     address public idRegistry;
 
     mapping(bytes20 => mapping(uint256 => Reward)) private _rewards;
     mapping(address => bool) private _enabledAssets;
+    mapping(address => uint256) private _accruedFees;
 
     constructor(address idRegistry_) Ownable(msg.sender) {
         idRegistry = idRegistry_;
@@ -72,8 +73,9 @@ contract RecastPromoter is IRecastPromoter, Ownable {
         if (block.timestamp > reward.expiresAt) revert RewardExpired();
         delete _rewards[recastedMessageHash][recasterFid];
 
-        uint256 fee = (rewardAmount * FEE) / PERCENTAGE_DIVISOR;
+        uint256 fee = (rewardAmount * FEE_PERCENTAGE) / PERCENTAGE_DIVISOR;
         uint256 recasterRewardAmount = rewardAmount - fee;
+        _accruedFees[rewardAsset] += fee;
 
         address recaster = IIdRegistry(idRegistry).custodyOf(recasterFid);
         if (recaster == address(0)) revert InvalidFid();
@@ -134,8 +136,9 @@ contract RecastPromoter is IRecastPromoter, Ownable {
     }
 
     /// @inheritdoc IRecastPromoter
-    function withdrawAsset(address asset, address receiver, uint256 amount) external onlyOwner {
-        IERC20(asset).transfer(receiver, amount);
+    function withdrawAccruedFeesByAsset(address asset, address receiver) external onlyOwner {
+        IERC20(asset).transfer(receiver, _accruedFees[asset]);
+        _accruedFees[asset] = 0;
     }
 
     function _verifyMessage(
