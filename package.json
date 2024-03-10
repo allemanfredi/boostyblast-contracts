@@ -7,12 +7,14 @@
     "lint:sol": "solhint --max-warnings 0 \"contracts/**/*.sol\"",
     "lint:ts": "eslint --ignore-path ./.eslintignore --ext .js,.ts .",
     "format": "prettier --write \"**/*.{js,json,md,sol,ts,yml}\"",
+    "postinstall": "patch-package",
     "test": "npx hardhat test"
   },
   "author": "allemanfredi",
   "license": "MIT",
   "devDependencies": {
     "@farcaster/core": "^0.13.7",
+    "@lens-protocol/core": "https://github.com/lens-protocol/core.git",
     "@noble/hashes": "^1.3.3",
     "@nomicfoundation/hardhat-ethers": "^3.0.5",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
@@ -25,6 +27,7 @@
     "ethers": "^6.10.0",
     "farcaster-solidity": "https://github.com/pavlovdog/farcaster-solidity.git",
     "hardhat": "^2.19.5",
+    "patch-package": "^8.0.0",
     "prettier": "^2.8.7",
     "prettier-plugin-solidity": "^1.0.0",
     "solhint": "^3.3.7",
