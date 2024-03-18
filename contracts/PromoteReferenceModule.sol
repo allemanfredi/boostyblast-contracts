@@ -84,7 +84,10 @@ contract PromoteReferenceModule is
         ) = abi.decode(data, (address[], uint256[], uint256[], uint64[]));
 
         for (uint256 i = 0; i < collectorProfileIds.length; ) {
+            address asset = assets[i];
+
             if (amounts[i] == 0) revert AmountCannotBeZero();
+            if (!isAssetEnabled(asset)) revert AssetNotEnabled(asset);
 
             for (uint256 j = 0; j < collectorProfileIds.length; ) {
                 if (i != j && collectorProfileIds[i] == collectorProfileIds[j])
@@ -94,11 +97,11 @@ contract PromoteReferenceModule is
                 }
             }
 
-            IERC20(assets[i]).transferFrom(creator, address(this), amounts[i]);
+            IERC20(asset).transferFrom(creator, address(this), amounts[i]);
 
             uint256 expiresAt = block.timestamp + durations[i];
-            _rewards[pubId][collectorProfileIds[i]] = Reward(assets[i], creatorProfileId, amounts[i], expiresAt);
-            emit Promoted(pubId, creatorProfileId, collectorProfileIds[i], assets[i], amounts[i], expiresAt);
+            _rewards[pubId][collectorProfileIds[i]] = Reward(asset, creatorProfileId, amounts[i], expiresAt);
+            emit Promoted(pubId, creatorProfileId, collectorProfileIds[i], asset, amounts[i], expiresAt);
 
             unchecked {
                 ++i;
