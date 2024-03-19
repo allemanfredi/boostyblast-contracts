@@ -164,7 +164,7 @@ contract PromoteReferenceModule is
             uint256 collectorRewardAmount = rewardAmount - fee;
             _accruedFees[rewardAsset] += fee;
 
-            delete _rewards[collectorProfileId][pointedPubId];
+            delete _rewards[pointedPubId][collectorProfileId];
             IERC20(rewardAsset).transfer(IERC721(HUB).ownerOf(collectorProfileId), collectorRewardAmount);
             emit RewardCollected(
                 pointedPubId,
