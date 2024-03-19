@@ -100,7 +100,7 @@ contract PromoteReferenceModule is
             IERC20(asset).transferFrom(creator, address(this), amounts[i]);
 
             uint256 expiresAt = block.timestamp + durations[i];
-            _rewards[pubId][collectorProfileIds[i]] = Reward(asset, creatorProfileId, amounts[i], expiresAt);
+            _rewards[pubId][collectorProfileIds[i]] = Reward(asset, amounts[i], creatorProfileId, expiresAt);
             emit Promoted(pubId, creatorProfileId, collectorProfileIds[i], asset, amounts[i], expiresAt);
 
             unchecked {
