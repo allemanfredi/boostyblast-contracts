@@ -21,19 +21,26 @@ const config: HardhatUserConfig = {
       accounts: [privateKey as string],
       chainId: 10,
       url: process.env.OPTIMISM_JSON_RPC_URL,
-      gasPrice: 0.002e9,
+      gasPrice: 0.2e9,
     },
     polygon: {
       accounts: [privateKey as string],
       chainId: 137,
       url: process.env.POLYGON_JSON_RPC_URL,
-      gasPrice: 130e9,
+      gasPrice: 180e9,
+    },
+    polygonMumbai: {
+      accounts: [privateKey as string],
+      chainId: 80001,
+      url: process.env.POLYGON_MUMBAI_JSON_RPC_URL,
+      gasPrice: 30e9,
     },
   },
   etherscan: {
     apiKey: {
       optimisticEthereum: process.env.OPTIMISM_API_KEY as string,
       polygon: process.env.POLYGONSCAN_API_KEY as string,
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY as string,
     },
   },
   gasReporter: {
