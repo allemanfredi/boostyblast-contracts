@@ -153,7 +153,7 @@ contract PromoteReferenceModule is
         uint256 collectorProfileId,
         uint256 creatorProfileId
     ) internal returns (bytes memory) {
-        Reward storage reward = _rewards[collectorProfileId][pointedPubId];
+        Reward storage reward = _rewards[pointedPubId][collectorProfileId];
 
         uint256 expiresAt = reward.expiresAt;
         if (block.timestamp < expiresAt) {
